@@ -24,21 +24,6 @@ def get_speech(url):
     except Exception as e:
         return "Exception occurred \n" +str(e)
 
-def get_relevant_urls(base_url):
-    try:
-        content = urllib.request.urlopen(base_url).read()
-        soup = BeautifulSoup(content, 'html.parser')
-
-        urls = []
-        # All relevant urls contain ws
-        tags = soup.find_all(href=re.compile("ws"))
-        for t in tags:
-            if("Remarks" in t.string):
-                urls.append(urllib.parse.urljoin(base_url, t['href']))
-
-        return urls
-    except Exception as e:
-        return "Exception occurred \n" +str(e)
 
 def save_remarks(url, label, train_fn, test_fn):
     remark_urls = get_relevant_urls(url)
@@ -56,16 +41,45 @@ def save_remarks(url, label, train_fn, test_fn):
     with open(test_fn, 'w') as fout:
         json.dump(remarks_test, fout)
 
-def remarks_driver():
-    save_remarks('http://www.presidency.ucsb.edu/2008_election_speeches.php?candidate=70&campaign=2008CLINTON&doctype=5000',
-                'clinton', 'clinton_remarks_train', 'clinton_remarks_test')
-    save_remarks('http://www.presidency.ucsb.edu/2008_election_speeches.php?candidate=44&campaign=2008OBAMA&doctype=5000',
-                'obama1', 'obama1_remarks_train', 'obama1_remarks_test')
-    save_remarks('http://www.presidency.ucsb.edu/2012_election_speeches.php?candidate=44&doctype=1150',
-                'obama2', 'obama2_remarks_train', 'obama2_remarks_test')
+# Function to retrieve relevant urls from page
+def get_entries(base_url):
+    try:
+        content = urllib.request.urlopen(base_url).read()
+        soup = BeautifulSoup(content, 'html.parser')
+
+        entries = []
+        # Find table rows
+        rows = soup.find_all('tr')
+        for t in rows:
+            # Get info from row
+            party = t.find('td', {'class': 'party'}).contents[0]
+            member = t.find('td', {'class': 'member'}).find('a').contents[0]
+            date = t.find('td', {'class': 'date'}).find('small').contents[0]
+            state = t.find('td', {'class': 'state'}).contents[0]
+            title = t.find('td', {'class': 'title'}).find('a').contents[0]
+            url = t.find('td', {'class': 'title'}).find('a')["href"]
+            # Add to list as dictionary
+            entries.append({"party": party, "member": member, "date": date, "state": state, "title": title,
+                            "url": url, "text": ""})
+
+        return entries
+    except Exception as e:
+        return "Exception occurred \n" +str(e)
+
+# Driver function to move get_urls through propublica pages
+def get_entries_driver(base_url, num):
+    page_count = 1
+    urls = []
+    while (page_count <= num):
+        # Extend url list with urls from new page
+        urls.extend(get_entries(base_url + str(page_count)))
+        page_count += 1
+
+    return urls
 
 def main():
-    print(get_speech("https://www.cardin.senate.gov/newsroom/press/release/cardin-calls-on-fcc-to-reject-so-called-internet-freedom-order-to-keep-the-internet-truly-open"))
-    print(get_speech("https://connolly.house.gov/news/documentsingle.aspx?DocumentID=1202"))
+    #print(get_speech("https://www.cardin.senate.gov/newsroom/press/release/cardin-calls-on-fcc-to-reject-so-called-internet-freedom-order-to-keep-the-internet-truly-open"))
+    print(get_entries("https://projects.propublica.org/represent/statements?page=1"))
+    #print(len(get_urls_driver("https://projects.propublica.org/represent/statements?page=", 5)))
 if __name__ == "__main__":
     main()
