@@ -3,24 +3,16 @@ import urllib.request
 import urllib.parse
 import json
 from bs4 import BeautifulSoup
-from readability import Document
+from newspaper import fulltext
 
 # Get speech as list given a url
-def get_speech(url):
+def get_text(url):
     try:
         # Getting text of page
-        content = urllib.request.urlopen(url).read()
-        #soup = BeautifulSoup(content, 'html.parser')
-        doc = Document(content)
-        doc.title()
-        #page = soup.findAll('p')
-        #txt = ''
-        #for e in page:
-        #    txt += e.get_text()
-        #txt = page.replace('<p>','').replace('</p>','').replace('<br>','').replace('</br>','').replace('</div>','').replace('</span><hr noshade="noshade" size="1"/>','').strip()
+        html = urllib.request.urlopen(url).read()
+        text = fulltext(html)
 
-        # Return list of lowercase words without punctuation
-        return doc.summary()
+        return text
     except Exception as e:
         return "Exception occurred \n" +str(e)
 
@@ -60,7 +52,7 @@ def get_entries(base_url):
             url = t.find('td', {'class': 'title'}).find('a')["href"]
             # Add to list as dictionary
             entries.append({"party": party, "member": member, "date": date, "state": state, "title": title,
-                            "url": url, "text": ""})
+                            "url": url, "text": get_text(url)})
 
         return entries
     except Exception as e:
@@ -78,8 +70,6 @@ def get_entries_driver(base_url, num):
     return urls
 
 def main():
-    #print(get_speech("https://www.cardin.senate.gov/newsroom/press/release/cardin-calls-on-fcc-to-reject-so-called-internet-freedom-order-to-keep-the-internet-truly-open"))
-    print(get_entries("https://projects.propublica.org/represent/statements?page=1"))
-    #print(len(get_urls_driver("https://projects.propublica.org/represent/statements?page=", 5)))
+    print(len(get_entries_driver("https://projects.propublica.org/represent/statements?page=", 5)))
 if __name__ == "__main__":
     main()
