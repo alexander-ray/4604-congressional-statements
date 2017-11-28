@@ -5,71 +5,55 @@ import json
 from bs4 import BeautifulSoup
 from newspaper import fulltext
 
-# Get speech as list given a url
-def get_text(url):
-    try:
-        # Getting text of page
-        html = urllib.request.urlopen(url).read()
-        text = fulltext(html)
+class Scraper:
+    # Get speech as list given a url
+    def _get_text(self, url):
+        try:
+            # Getting text of page
+            html = urllib.request.urlopen(url).read()
+            text = fulltext(html)
 
-        return text
-    except Exception as e:
-        return "Exception occurred \n" +str(e)
+            return text
+        except Exception as e:
+            return "Exception occurred \n" +str(e)
 
+    # Function to retrieve relevant urls from page
+    def _get_entries(self, base_url):
+        try:
+            content = urllib.request.urlopen(base_url).read()
+            soup = BeautifulSoup(content, 'html.parser')
 
-def save_remarks(url, label, train_fn, test_fn):
-    remark_urls = get_relevant_urls(url)
-    remarks_train = []
-    remarks_test = []
-    c = len(remark_urls)
-    # Put 1/10 speeches in test set
-    for i in range(0, c):
-        if (i % 10 == 0):
-            remarks_test.append([label, get_speech(remark_urls[i])])
-        else:
-            remarks_train.append([label, get_speech(remark_urls[i])])
-    with open(train_fn, 'w') as fout:
-        json.dump(remarks_train, fout)
-    with open(test_fn, 'w') as fout:
-        json.dump(remarks_test, fout)
+            entries = []
+            # Find table rows
+            rows = soup.find_all('tr')
+            for t in rows:
+                # Get info from row
+                party = t.find('td', {'class': 'party'}).contents[0]
+                member = t.find('td', {'class': 'member'}).find('a').contents[0]
+                date = t.find('td', {'class': 'date'}).find('small').contents[0]
+                state = t.find('td', {'class': 'state'}).contents[0]
+                title = t.find('td', {'class': 'title'}).find('a').contents[0]
+                url = t.find('td', {'class': 'title'}).find('a')["href"]
+                # Add to list as dictionary
+                entries.append({"party": party, "member": member, "date": date, "state": state, "title": title,
+                                "url": url, "text": self._get_text(url)})
 
-# Function to retrieve relevant urls from page
-def get_entries(base_url):
-    try:
-        content = urllib.request.urlopen(base_url).read()
-        soup = BeautifulSoup(content, 'html.parser')
+            return entries
+        except Exception as e:
+            return "Exception occurred \n" +str(e)
 
-        entries = []
-        # Find table rows
-        rows = soup.find_all('tr')
-        for t in rows:
-            # Get info from row
-            party = t.find('td', {'class': 'party'}).contents[0]
-            member = t.find('td', {'class': 'member'}).find('a').contents[0]
-            date = t.find('td', {'class': 'date'}).find('small').contents[0]
-            state = t.find('td', {'class': 'state'}).contents[0]
-            title = t.find('td', {'class': 'title'}).find('a').contents[0]
-            url = t.find('td', {'class': 'title'}).find('a')["href"]
-            # Add to list as dictionary
-            entries.append({"party": party, "member": member, "date": date, "state": state, "title": title,
-                            "url": url, "text": get_text(url)})
+    # Driver function to move get_urls through propublica pages
+    def get_entries_driver(self, base_url, num):
+        page_count = 1
+        urls = []
+        while (page_count <= num):
+            # Extend url list with urls from new page
+            urls.extend(self._get_entries(base_url + str(page_count)))
+            page_count += 1
 
-        return entries
-    except Exception as e:
-        return "Exception occurred \n" +str(e)
+        return urls
 
-# Driver function to move get_urls through propublica pages
-def get_entries_driver(base_url, num):
-    page_count = 1
-    urls = []
-    while (page_count <= num):
-        # Extend url list with urls from new page
-        urls.extend(get_entries(base_url + str(page_count)))
-        page_count += 1
-
-    return urls
-
-def main():
-    print(len(get_entries_driver("https://projects.propublica.org/represent/statements?page=", 5)))
-if __name__ == "__main__":
-    main()
+#def main():
+#    print(len(get_entries_driver("https://projects.propublica.org/represent/statements?page=", 5)))
+#if __name__ == "__main__":
+#    main()
