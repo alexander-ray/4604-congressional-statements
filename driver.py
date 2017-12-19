@@ -9,6 +9,7 @@ import numpy as np
 from plotting import Plotting
 
 
+# Code to get vector of topic scores for each party
 def get_topic_vectors(train, topics):
     r_topics = []
     d_topics = []
