@@ -2,6 +2,7 @@
 Applied Machine Learning (INFO 4604) final project on congressional statements.
 
 driver.py has the main driver code for logistic regression, linear svm, and lda. Also includes some helper functions.
+Everything in "main" in driver should just be some combination of calling the other functions. The code there now is only to get LDA results.
 
 feature_processor.py has the named entity removal functions, as well as a data-retrieval driver function.
 
