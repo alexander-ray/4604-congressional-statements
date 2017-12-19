@@ -9,5 +9,7 @@ scraper.py has the web scraping code, as well as the driver function to split da
 
 plotting.py has the plotting code for charts seen on the ppt.
 
-Obviously lots of stackoverflow and scikit-learn documentation was used, but all functions based on stackoverflow responses or scikit-learn examples have a link to the relevant code above the function.
+Obviously lots of stackoverflow and scikit-learn documentation was used for debugging and syntax questions, but all functions based on stackoverflow responses or scikit-learn examples have a link to the relevant code above the function.
+Most learning and plotting code is from class homework assignments. The basic BS4 scraper structure is from a previous project at https://github.com/alexander-ray/stump_speech_analysis/blob/master/speech_scraper.py
+
 
